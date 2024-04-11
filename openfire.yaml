@@ -1,0 +1,47 @@
+package:
+  name: openfire
+  version: "4.8.1"
+  epoch: 0
+  description: OpenFire XMPP server
+  copyright:
+    - license: Apache-2.0
+  dependencies:
+    runtime:
+      - openjdk-22-default-jvm
+      - busybox
+
+environment:
+  contents:
+    packages:
+      - maven
+      - openjdk-22
+      - wolfi-base
+
+pipeline:
+  - uses: git-checkout
+    with:
+      repository: https://github.com/igniterealtime/Openfire/
+      tag: v${{package.version}}
+      expected-commit: 6f4eb4c639dd453abfa3a56a121ca19fb4d247c0
+
+  - name: Preinstall - Create user/dirs
+    runs: |
+      addgroup openfire
+      mkdir -p ${{targets.destdir}}/var/lib/openfire ${{targets.destdir}}/var/log/openfire
+      adduser  -G openfire -Hh /var/lib/openfire -D openfire
+      mkdir -p ${{targets.destdir}}/usr/local/openfire
+      chown -R openfire:openfire ${{targets.destdir}}/var/lib/openfire ${{targets.destdir}}/var/log/openfire
+
+  - name: Build
+    runs: |
+      export JAVA_HOME=/usr/lib/jvm/java-22-openjdk
+      export MAVEN_OPTS="-Dmaven.repo.local=/home/build"
+      ./mvnw -Dmaven.test.skip -DskipTests verify 
+
+  - name: Install
+    runs: |
+      cp -r ./distribution/target/distribution-base/[LRbclpr]* ${{targets.destdir}}/usr/local/openfire/
+      chown -R openfire:openfire ${{targets.destdir}}/usr/local/openfire
+      ln -s /var/log/openfire ${{targets.destdir}}/usr/local/openfire/logs
+# The [LRbclpr]* wildcard copies everything except documentation
+
