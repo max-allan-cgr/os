@@ -23,9 +23,9 @@ pipeline:
       tag: LMDB_${{package.version}}
       expected-commit: ce201088de95d26fc0da36ba805bf2ddc2ba74ff
 
-  - uses: patch
-    with:
-      patches: 0001-Debian-quirks-to-make-shared-library-versioned.patch
+  #- uses: patch
+  #  with:
+  #    patches: 0001-Debian-quirks-to-make-shared-library-versioned.patch
 
   - runs: |
       cd libraries/liblmdb
@@ -49,6 +49,9 @@ pipeline:
       make DESTDIR="${{targets.destdir}}"  prefix=/usr install
 
       install -Dm0644 *.pc -t ${{targets.destdir}}/usr/lib/pkgconfig
+      mv "${{targets.destdir}}"/usr/lib/liblmdb.so "${{targets.destdir}}"/usr/lib/liblmdb.so.0.0.0
+      ln -s /usr/lib/liblmdb.so.0.0.0 "${{targets.destdir}}"/usr/lib/liblmdb.so
+      ln -s /usr/lib/liblmdb.so.0.0.0 "${{targets.destdir}}"/usr/lib/liblmdb.so.0
 
   - uses: strip
 
